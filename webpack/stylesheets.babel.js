@@ -12,7 +12,7 @@ export default {
   mode: "production",
 
   entry: {
-    "swagger-ui": "./src/style/main.scss",
+    "api-view": "./src/style/main.scss",
   },
 
   module: {

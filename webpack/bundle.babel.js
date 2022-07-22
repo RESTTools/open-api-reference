@@ -24,7 +24,7 @@ const result = configBuilder(
   },
   {
     entry: {
-      "swagger-ui-bundle": [
+      "api-view-bundle": [
         "./src/index.js",
       ],
     },

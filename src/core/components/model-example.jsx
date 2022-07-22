@@ -36,12 +36,10 @@ export default class ModelExample extends React.Component {
       activeTab,
     }
   }
-
-  activeTab = ( e ) => {
-    let { target : { dataset : { name } } } = e
-
+  
+  activeTab = (tab) => {
     this.setState({
-      activeTab: name
+      activeTab: tab
     })
   }
 
@@ -56,7 +54,7 @@ export default class ModelExample extends React.Component {
   }
 
   render() {
-    let { getComponent, specSelectors, schema, example, isExecute, getConfigs, specPath, includeReadOnly, includeWriteOnly } = this.props
+    let { getComponent, specSelectors, schema, example, isExecute, getConfigs, specPath, includeReadOnly, includeWriteOnly, type,skipInList } = this.props
     let { defaultModelExpandDepth } = getConfigs()
     const ModelWrapper = getComponent("ModelWrapper")
     const HighlightCode = getComponent("highlightCode")
@@ -69,36 +67,33 @@ export default class ModelExample extends React.Component {
 
     return (
       <div className="model-example">
+        {!isExecute &&  
         <ul className="tab" role="tablist">
-          <li className={cx("tabitem", { active: this.state.activeTab === "example" })} role="presentation">
-            <button
+          <li  onClick={this.activeTab.bind(this,"example")} className={"tabitem" + (isExecute || this.state.activeTab === "example" ? " active" : "")} role="presentation">
+            <a
               aria-controls={examplePanelId}
               aria-selected={this.state.activeTab === "example"}
               className="tablinks"
               data-name="example"
               id={exampleTabId}
-              onClick={ this.activeTab }
               role="tab"
-            >
-              {isExecute ? "Edit Value" : "Example Value"}
-            </button>
+            >Example</a>
           </li>
           { schema && (
-            <li className={cx("tabitem", { active: this.state.activeTab === "model" })} role="presentation">
-              <button
+            <li onClick={this.activeTab.bind(this,"model")} className={"tabitem" + (!isExecute && this.state.activeTab === "model" ? " active" : "")} role="presentation">
+              <a
                 aria-controls={modelPanelId}
                 aria-selected={this.state.activeTab === "model"}
-                className={cx("tablinks", { inactive: isExecute })}
+                className={"tablinks" + (isExecute ? " inactive" : "")}
                 data-name="model"
                 id={modelTabId}
-                onClick={ this.activeTab }
                 role="tab"
               >
                 {isOAS3 ? "Schema" : "Model" }
-              </button>
+              </a>
             </li>
           )}
-        </ul>
+        </ul>}
         {this.state.activeTab === "example" && (
           <div
             aria-hidden={this.state.activeTab !== "example"}
@@ -132,6 +127,7 @@ export default class ModelExample extends React.Component {
               specPath={specPath}
               includeReadOnly = {includeReadOnly}
               includeWriteOnly = {includeWriteOnly}
+              skipInList={skipInList}
             />
           </div>
         )}

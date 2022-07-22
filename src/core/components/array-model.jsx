@@ -43,11 +43,11 @@ export default class ArrayModel extends Component {
     */
 
     return <span className="model">
-      <ModelCollapse title={titleEl} expanded={ depth <= expandDepth } collapsedContent="[...]">
+      <ModelCollapse title={titleEl} expanded={ true } collapsedContent="[...]">
         [
-          {
+          {/* {
             properties.size ? properties.entrySeq().map( ( [ key, v ] ) => <Property key={`${key}-${v}`} propKey={ key } propVal={ v } propClass={ propClass } />) : null
-          }
+          } */}
           {
             !description ? (properties.size ? <div className="markdown"></div> : null) :
               <Markdown source={ description } />

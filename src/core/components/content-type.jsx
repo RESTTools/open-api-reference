@@ -49,13 +49,13 @@ export default class ContentType extends React.Component {
       return null
 
     return (
-      <div className={ "content-type-wrapper " + ( className || "" ) }>
+      <span className={ "content-type-wrapper " + ( className || "" ) }>
         <select aria-controls={ariaControls} aria-label={ariaLabel} className="content-type" id={controlId} onChange={this.onChangeWrapper} value={value || ""} >
           { contentTypes.map( (val) => {
-            return <option key={ val } value={ val }>{ val }</option>
+            return <option title={val} key={ val } value={ val }>{ val.endsWith("xml") ? "XML": val.endsWith("json") ? "JSON":val}</option>
           }).toArray()}
         </select>
-      </div>
+      </span>
     )
   }
 }

@@ -29,6 +29,80 @@ import {
 } from "./actions"
 import { paramToIdentifier } from "../../utils"
 
+
+const supportBothVersions= (payload)=>{
+  const readContent= (content)=>{
+    if(typeof content == "object"){
+      const types  = Object.keys(content);
+      const values = Object.values(content);
+      if(values.length>0 && values[0].schema){
+        return [types, values[0].schema]
+      }
+    }
+    return [];
+  }
+
+  payload.swagger = '2.0'
+  delete payload.openapi;
+  const secDefs = {...(payload?.securityDefinitions), ...(payload?.components?.securitySchemes)};
+  Object.values(secDefs)
+  .forEach(secDef => {    
+    if(typeof secDef == "object"){
+      if(secDef.type == "basic"){
+        secDef.scheme = secDef.type;
+        secDef.type = "http";
+      }
+    }
+  })
+  payload.securityDefinitions = secDefs; 
+  payload.components = payload.components || {};  
+  payload.components.securitySchemes = secDefs;
+
+  Object.values(payload?.paths || {})
+    .forEach(url => typeof url == "object" && Object.values(url || {})
+      .forEach(op=>{
+          if(typeof op == "object"){
+            if(op?.requestBody?.content){
+              const [types, schema] = readContent(op?.requestBody?.content);
+              if(schema){
+                if(!op.parameters){
+                  op.parameters = [];
+                }
+                op.parameters.push({              
+                  in: "body",
+                  name: "body",
+                  description: op?.requestBody?.description,
+                  required: true,
+                  schema: schema
+                });
+                op.consumes = types;
+              }
+              delete op.requestBody;
+            }
+            Object.values(op?.responses || {}).forEach(res=>{
+              if(typeof res == "object"){
+                if(res?.content){
+                  const [types, schema] = readContent(res?.content);
+                  if(schema){
+                    res.schema = schema;
+                    op.produces = op?.produces || [];
+                    types.forEach(type=>{
+                      if(!op.produces.includes(type)){                        
+                        op?.produces.push(type);
+                      }
+                    });
+                  }
+                  delete res.content;
+                }
+              }
+            })
+          }
+        }
+      )
+  );
+  return payload;
+}
+
 export default {
 
   [UPDATE_SPEC]: (state, action) => {
@@ -42,7 +116,7 @@ export default {
   },
 
   [UPDATE_JSON]: (state, action) => {
-    return state.set("json", fromJSOrdered(action.payload))
+    return state.set("json", fromJSOrdered(supportBothVersions(action.payload)))
   },
 
   [UPDATE_RESOLVED]: (state, action) => {
@@ -51,7 +125,7 @@ export default {
 
   [UPDATE_RESOLVED_SUBTREE]: (state, action) => {
     const { value, path } = action.payload
-    return state.setIn(["resolvedSubtrees", ...path], fromJSOrdered(value))
+    return state.setIn(["resolvedSubtrees", ...path], fromJSOrdered(supportBothVersions(value)))
   },
 
   [UPDATE_PARAM]: ( state, {payload} ) => {
@@ -83,17 +157,18 @@ export default {
     )
   },
 
-  [VALIDATE_PARAMS]: ( state, { payload: { pathMethod, isOAS3 } } ) => {
+  [VALIDATE_PARAMS]: ( state, { payload: { pathMethod, isOAS3, isXml } } ) => {
     const op = specJsonWithResolvedSubtrees(state).getIn(["paths", ...pathMethod])
-    const paramValues = parameterValues(state, pathMethod).toJS()
-
+    const paramValues = parameterValues(state, pathMethod, isXml).toJS()
     return state.updateIn(["meta", "paths", ...pathMethod, "parameters"], fromJS({}), paramMeta => {
       return op.get("parameters", List()).reduce((res, param) => {
+
         const value = paramToValue(param, paramValues)
         const isEmptyValueIncluded = parameterInclusionSettingFor(state, pathMethod, param.get("name"), param.get("in"))
         const errors = validateParam(param, value, {
           bypassRequiredCheck: isEmptyValueIncluded,
           isOAS3,
+          isXml
         })
         return res.setIn([paramToIdentifier(param), "errors"], fromJS(errors))
       }, paramMeta)
@@ -124,7 +199,7 @@ export default {
     let newState = state.setIn( [ "responses", path, method ], fromJSOrdered(result) )
 
     // ImmutableJS messes up Blob. Needs to reset its value.
-    if (win.Blob && res.data instanceof win.Blob) {
+    if ((win.Blob && res.data instanceof win.Blob )|| (res.data&&res.data.size) ) {
       newState = newState.setIn( [ "responses", path, method, "text" ], res.data)
     }
     return newState
@@ -160,7 +235,15 @@ export default {
   },
 
   [CLEAR_REQUEST]: (state, { payload: { path, method } } ) =>{
-    return state.deleteIn( [ "requests", path, method ])
+    state.deleteIn( [ "requests", path, method ])
+    return state.updateIn( [ "resolved", "paths",  path, method, "parameters" ], fromJS([]), parameters => {
+      return parameters.withMutations( parameters => {
+        for ( let i = 0, len = parameters.count(); i < len; i++ ) {
+            parameters.deleteIn([i, "value"], "")
+            parameters.deleteIn([i, "value_xml"], "")
+        }
+      })
+    })
   },
 
   [SET_SCHEME]: (state, { payload: { scheme, path, method } } ) =>{

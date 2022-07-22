@@ -17,7 +17,9 @@ export default class Execute extends Component {
 
   handleValidateParameters = () => {
     let { specSelectors, specActions, path, method } = this.props
-    specActions.validateParams([path, method])
+    let { requestContentType } = specSelectors.contentTypeValues([path, method]).toJS()
+    let isXml = /xml/i.test(requestContentType)
+    specActions.validateParams([path, method ],isXml)
     return specSelectors.validateBeforeExecute([path, method])
   }
 
@@ -67,11 +69,13 @@ export default class Execute extends Component {
   }
 
   handleValidationResultFail = () => {
-    let { specActions, path, method } = this.props
+    let { specActions, path, method, specSelectors } = this.props
+    let { requestContentType } = specSelectors.contentTypeValues([path, method]).toJS()
+    let isXml = /xml/i.test(requestContentType)
     // deferred by 40ms, to give element class change time to settle.
     specActions.clearValidateParams([path, method])
     setTimeout(() => {
-      specActions.validateParams([path, method])
+      specActions.validateParams([path, method] ,isXml)
     }, 40)
   }
 
@@ -95,7 +99,7 @@ export default class Execute extends Component {
   render(){
     const { disabled } = this.props
     return (
-        <button className="btn execute opblock-control__btn" onClick={ this.onClick } disabled={disabled}>
+        <button className="btn execute-fusia opblock-control__btn" onClick={ this.onClick } disabled={disabled}>
           Execute
         </button>
     )

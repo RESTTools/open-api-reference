@@ -30,6 +30,20 @@ export default class Responses extends React.Component {
     displayRequestDuration: false
   }
 
+  constructor(props, context) {
+    super(props, context)
+    this.state = {
+      activeTab: 'current'
+    }
+  }
+
+  activeTab =( e ) => {
+    let { target : { dataset : { name } } } = e
+    this.setState({
+      activeTab: name,
+    })
+  }
+
   // These performance-enhancing checks were disabled as part of Multiple Examples
   // because they were causing data-consistency issues
   //
@@ -73,6 +87,7 @@ export default class Responses extends React.Component {
       method,
       oas3Selectors,
       oas3Actions,
+      security, authActions,authSelectors
     } = this.props
     let defaultCode = defaultStatusCode( responses )
 
@@ -83,6 +98,7 @@ export default class Responses extends React.Component {
     let produces = this.props.produces && this.props.produces.size ? this.props.produces : Responses.defaultProps.produces
 
     const isSpecOAS3 = specSelectors.isOAS3()
+    const errorCodeMessage = specSelectors.errorCodeMessage()
 
     const acceptControllingResponse = isSpecOAS3 ?
       getAcceptControllingResponse(responses) : null
@@ -90,12 +106,20 @@ export default class Responses extends React.Component {
     const regionId = createHtmlReadyId(`${method}${path}_responses`)
     const controlId = `${regionId}_select`
 
+    let showExpected = this.state.activeTab!="current" || !tryItOutResponse
+    let showCurrent = tryItOutResponse && this.state.activeTab==="current"
     return (
-      <div className="responses-wrapper">
+      <div className="responses-wrapper">        
         <div className="opblock-section-header">
-          <h4>Responses</h4>
-            { specSelectors.isOAS3() ? null : <label htmlFor={controlId}>
-              <span>Response content type</span>
+          <h4>{ showCurrent? "Current Response":"Expected Responses"}</h4>
+          {showCurrent ? <button className="btn"  data-name="expected" onClick={ this.activeTab }>Expected Responses</button>:null}
+          {tryItOutResponse && this.state.activeTab!="current" ? <button className="btn" data-name="current" onClick={ this.activeTab }>Current Response</button> : null}          
+        </div>      
+        <div className="opblock-saperater"/>        
+       
+          <div className="accept-header">
+          <div className="accept-header-right">
+          <span>Accept : </span>              
               <ContentType value={producesValue}
                          ariaControls={regionId}
                          ariaLabel="Response content type"
@@ -103,33 +127,26 @@ export default class Responses extends React.Component {
                          contentTypes={produces}
                          controlId={controlId}
                          onChange={this.onChangeProducesWrapper} />
-                     </label> }
-        </div>
+        </div></div>
+        {
+          !tryItOutResponse || !(this.state.activeTab==="current") ? null
+                            : <div className="responses-inner">
+                                <LiveResponse response={ tryItOutResponse }
+                                              getComponent={ getComponent }
+                                              getConfigs={ getConfigs }
+                                              specSelectors={ specSelectors }
+                                              path={ this.props.path }
+                                              method={ this.props.method }
+                                              displayRequestDuration={ displayRequestDuration }                                                
+                                              security={security}
+                                              authActions={authActions}
+                                              authSelectors={authSelectors} />
+                              </div>
+
+        }
+        {showExpected?
         <div className="responses-inner">
-          {
-            !tryItOutResponse ? null
-                              : <div>
-                                  <LiveResponse response={ tryItOutResponse }
-                                                getComponent={ getComponent }
-                                                getConfigs={ getConfigs }
-                                                specSelectors={ specSelectors }
-                                                path={ this.props.path }
-                                                method={ this.props.method }
-                                                displayRequestDuration={ displayRequestDuration } />
-                                  <h4>Responses</h4>
-                                </div>
-
-          }
-
-          <table aria-live="polite" className="responses-table" id={regionId} role="region">
-            <thead>
-              <tr className="responses-header">
-                <td className="col_header response-col_status">Code</td>
-                <td className="col_header response-col_description">Description</td>
-                { specSelectors.isOAS3() ? <td className="col col_header response-col_links">Links</td> : null }
-              </tr>
-            </thead>
-            <tbody>
+          <div className="responses-table">
               {
                 responses.entrySeq().map( ([code, response]) => {
 
@@ -138,7 +155,7 @@ export default class Responses extends React.Component {
                     <Response key={ code }
                               path={path}
                               method={method}
-                              specPath={specPath.push(code)}
+                              specPath={specPath && specPath.push(code)}
                               isDefault={defaultCode === code}
                               fn={fn}
                               className={ className }
@@ -149,20 +166,21 @@ export default class Responses extends React.Component {
                               onContentTypeChange={this.onResponseContentTypeChange}
                               contentType={ producesValue }
                               getConfigs={ getConfigs }
-                              activeExamplesKey={oas3Selectors.activeExamplesMember(
+                              activeExamplesKey={oas3Selectors && oas3Selectors.activeExamplesMember(
                                 path,
                                 method,
                                 "responses",
                                 code
                               )}
                               oas3Actions={oas3Actions}
-                              getComponent={ getComponent }/>
+                              getComponent={ getComponent }
+                              produces={producesValue} />
                     )
                 }).toArray()
               }
-            </tbody>
-          </table>
         </div>
+          {errorCodeMessage && <p className="response-link"><i type="button" dangerouslySetInnerHTML={{ __html: errorCodeMessage }}></i></p>}
+        </div>:null}
       </div>
     )
   }

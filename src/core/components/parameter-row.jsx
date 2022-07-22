@@ -99,6 +99,8 @@ export default class ParameterRow extends Component {
     const paramWithMeta = specSelectors.parameterWithMetaByIdentity(pathMethod, rawParam) || Map()
     const { schema } = getParameterSchema(paramWithMeta, { isOAS3: specSelectors.isOAS3() })
     const parameterMediaType = paramWithMeta
+    .get("content", Map())
+    .keySeq && paramWithMeta
       .get("content", Map())
       .keySeq()
       .first()
@@ -198,6 +200,15 @@ export default class ParameterRow extends Component {
     const JsonSchemaForm = getComponent("JsonSchemaForm")
     const ParamBody = getComponent("ParamBody")
     let inType = param.get("in")
+    
+    let rawSchema = param.get("schema")
+    let consumesValue = specSelectors.contentTypeValues(pathMethod).get("requestContentType")
+    let xsd;
+    if(rawSchema){
+      xsd = rawSchema.get("xsd");
+    }
+    
+    let paramWithMeta = specSelectors.parameterWithMetaByIdentity(pathMethod, rawParam) || Map()
     let bodyParam = inType !== "body" ? null
       : <ParamBody getComponent={getComponent}
                    getConfigs={ getConfigs }
@@ -210,6 +221,9 @@ export default class ParameterRow extends Component {
                    isExecute={ isExecute }
                    specSelectors={ specSelectors }
                    pathMethod={ pathMethod }
+                   xsd={xsd}
+                   type={consumesValue}
+                   errors={ paramWithMeta.get("errors") }
       />
 
     const ModelExample = getComponent("modelExample")
@@ -220,7 +234,6 @@ export default class ParameterRow extends Component {
     const Example = getComponent("Example")
 
     let { schema } = getParameterSchema(param, { isOAS3 })
-    let paramWithMeta = specSelectors.parameterWithMetaByIdentity(pathMethod, rawParam) || Map()
 
     let format = schema ? schema.get("format") : null
     let type = schema ? schema.get("type") : null
@@ -268,27 +281,44 @@ export default class ParameterRow extends Component {
       }
     }
 
-    return (
-      <tr data-param-name={param.get("name")} data-param-in={param.get("in")}>
-        <td className="parameters-col_name">
-          <div className={required ? "parameter__name required" : "parameter__name"}>
-            { param.get("name") }
-            { !required ? null : <span>&nbsp;*</span> }
+    let displayName = param.get("displayName")
+    let consumes = specSelectors.consumesOptionsFor(pathMethod)
+    consumes = consumes && consumes.size ? consumes : ParamBody.defaultProp.consumes
+    const ContentType = getComponent("contentType")
+    return (      
+      <div className="one-peram">
+        {
+          bodyParam ?
+            <div >
+              <span className= "parameter__name">
+                Body
+                {!required ? null : <span style={{ color: "red" }}>*</span>}
+              </span>
+              <span className="parameter__deprecated">
+                {isOAS3 && param.get("deprecated") ? "deprecated" : null}
+              </span>
+              <span className="parameter-content-type">
+                <span>Content-Type : </span>
+                
+                <ContentType value={consumesValue} contentTypes={consumes} onChange={onChangeConsumes} className="body-param-content-type" />
+              </span>
+            </div>
+            :
+            <div>
+              <span className= "parameter__name">
+                {displayName ?displayName: param.get("name")}
+                {!required ? null : <span style={{ color: "red" }}>*</span>}
+              </span>
+              <span className="parameter__type"> : {type} {itemType && `[${itemType}]`} { format && <span className="prop-format">(${format})</span>}</span>
+              <span className="parameter__deprecated">
+                { isOAS3 && param.get("deprecated") ? "deprecated": null }
+              </span>
+              <span className="parameter__in">({ param.get("in") })</span>
+            { !showCommonExtensions || !commonExt.size ? null : commonExt.entrySeq().map(([key, v]) => <ParameterExt key={`${key}-${v}`} xKey={key} xVal={v} /> )}
+            { !showExtensions || !extensions.size ? null : extensions.entrySeq().map(([key, v]) => <ParameterExt key={`${key}-${v}`} xKey={key} xVal={v} /> )}
           </div>
-          <div className="parameter__type">
-            { type }
-            { itemType && `[${itemType}]` }
-            { format && <span className="prop-format">(${format})</span>}
-          </div>
-          <div className="parameter__deprecated">
-            { isOAS3 && param.get("deprecated") ? "deprecated": null }
-          </div>
-          <div className="parameter__in">({ param.get("in") })</div>
-          { !showCommonExtensions || !commonExt.size ? null : commonExt.entrySeq().map(([key, v]) => <ParameterExt key={`${key}-${v}`} xKey={key} xVal={v} /> )}
-          { !showExtensions || !extensions.size ? null : extensions.entrySeq().map(([key, v]) => <ParameterExt key={`${key}-${v}`} xKey={key} xVal={v} /> )}
-        </td>
+        }
 
-        <td className="parameters-col_description">
           { param.get("description") ? <Markdown source={ param.get("description") }/> : null }
 
           { (bodyParam || !isExecute) && isDisplayParamEnum ?
@@ -327,13 +357,13 @@ export default class ParameterRow extends Component {
             ) : null
           }
 
-          { bodyParam ? null
+          { bodyParam || !isExecute? null
             : <JsonSchemaForm fn={fn}
                               getComponent={getComponent}
                               value={ value }
-                              required={ required }
+                              required={ false }
                               disabled={!isExecute}
-                              description={param.get("name")}
+                              // description={param.get("name")}
                               onChange={ this.onChangeWrapper }
                               errors={ paramWithMeta.get("errors") }
                               schema={ schema }/>
@@ -348,7 +378,9 @@ export default class ParameterRow extends Component {
                                                 specSelectors={ specSelectors }
                                                 schema={ schema }
                                                 example={ bodyParam }
-                                                includeWriteOnly={ true }/>
+                                                type={consumesValue}
+                                                includeReadOnly={false}
+                                                includeWriteOnly={true}/>
               : null
           }
 
@@ -373,10 +405,7 @@ export default class ParameterRow extends Component {
               />
             ) : null
           }
-
-        </td>
-
-      </tr>
+      </div>
     )
 
   }

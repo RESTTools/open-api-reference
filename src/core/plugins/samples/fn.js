@@ -177,8 +177,8 @@ export const sampleFromSchemaGeneric = (schema, config={}, exampleOverride = und
     }
   }
   const _attr = {}
-  let { xml, type, example, properties, additionalProperties, items } = schema || {}
-  let { includeReadOnly, includeWriteOnly } = config
+  let { xml, type, example, properties, additionalProperties, items, sample } = schema || {}
+  let { includeReadOnly, includeWriteOnly , modes, skipInList} = config
   xml = xml || {}
   let { name, prefix, namespace } = xml
   let displayName
@@ -425,6 +425,13 @@ export const sampleFromSchemaGeneric = (schema, config={}, exampleOverride = und
       for (let propName in sample) {
         if (!Object.prototype.hasOwnProperty.call(sample, propName)) {
           continue
+        }      
+        if (schema && modes && modes[0] && (!props[propName].modes ||
+          (props[propName].modes[0] && props[propName].modes[0] !== modes[0]))) {
+          continue
+        }
+        if (schema && props[propName].skipInList && skipInList ) {
+          continue
         }
         if (schema && props[propName] && props[propName].readOnly && !includeReadOnly) {
           continue
@@ -454,6 +461,13 @@ export const sampleFromSchemaGeneric = (schema, config={}, exampleOverride = und
   if(type === "object") {
     for (let propName in props) {
       if (!Object.prototype.hasOwnProperty.call(props, propName)) {
+        continue
+      }
+      if (schema && modes && modes[0] && (!props[propName].modes ||
+        (props[propName].modes[0] && props[propName].modes[0] !== modes[0]))) {
+        continue
+      }
+      if (schema && props[propName].skipInList && skipInList ) {
         continue
       }
       if ( props[propName] && props[propName].deprecated ) {
@@ -608,7 +622,7 @@ export const createXMLExample = (schema, config, o) => {
   if(typeof json === "string") {
     return json
   }
-  return XML(json, { declaration: true, indent: "\t" })
+  return XML(json, { declaration: true, indent: "  " })
 }
 
 export const sampleFromSchema = (schema, config, o) =>

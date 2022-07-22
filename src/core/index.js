@@ -21,12 +21,14 @@ export default function SwaggerUI(opts) {
 
   const defaults = {
     // Some general settings, that we floated to the top
-    dom_id: null, // eslint-disable-line camelcase
-    domNode: null,
+    clientCode: ["Java","Python","Http"],
+    tryout:true,
+    curl:false,
+    dom_id: "#api-view",
     spec: {},
     url: "",
     urls: null,
-    layout: "BaseLayout",
+    layout: "StandaloneLayout",
     docExpansion: "list",
     maxDisplayedTags: null,
     filter: null,
@@ -82,7 +84,8 @@ export default function SwaggerUI(opts) {
     // Initial set of plugins ( TODO rename this, or refactor - we don't need presets _and_ plugins. Its just there for performance.
     // Instead, we can compile the first plugin ( it can be a collection of plugins ), then batch the rest.
     presets: [
-      ApisPreset
+      SwaggerUIBundle.presets.apis,
+      SwaggerUIStandalonePreset
     ],
 
     // Plugins; ( loaded after presets )

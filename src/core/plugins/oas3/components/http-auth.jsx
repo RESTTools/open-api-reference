@@ -62,11 +62,9 @@ export default class HttpAuth extends React.Component {
       let username = value ? value.get("username") : null
       return <div>
         <h4>
-          <code>{ name || schema.get("name") }</code>&nbsp;
-            (http, Basic)
+          <code>Basic Auth</code>
             <JumpToPath path={[ "securityDefinitions", name ]} />
           </h4>
-        { username && <h6>Authorized</h6> }
         <Row>
           <Markdown source={ schema.get("description") } />
         </Row>
@@ -101,11 +99,9 @@ export default class HttpAuth extends React.Component {
       return (
         <div>
           <h4>
-            <code>{ name || schema.get("name") }</code>&nbsp;
-              (http, Bearer)
+            <code>Bearer Token</code>&nbsp;
               <JumpToPath path={[ "securityDefinitions", name ]} />
             </h4>
-            { value && <h6>Authorized</h6>}
             <Row>
               <Markdown source={ schema.get("description") } />
             </Row>

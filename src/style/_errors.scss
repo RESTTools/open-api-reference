@@ -29,22 +29,6 @@
         {
           color: $errors-wrapper-errors-small-font-color;
         }
-
-        .message
-        { 
-            white-space: pre-line;
-            
-            &.thrown
-            {
-                max-width: 100%;
-            }
-        }
-
-        .error-line
-        {
-            text-decoration: underline;
-            cursor: pointer;
-        }
     }
 
     hgroup

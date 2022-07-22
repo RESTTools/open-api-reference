@@ -1,12 +1,12 @@
 import StandaloneLayout from "./layout"
-import TopbarPlugin from "plugins/topbar"
+import MainContainerPlugin from "plugins/main-container"
 import ConfigsPlugin from "corePlugins/configs"
 import SafeRenderPlugin from "core/plugins/safe-render"
 
 // the Standalone preset
 
 export default [
-  TopbarPlugin,
+  MainContainerPlugin,
   ConfigsPlugin,
   () => {
     return {

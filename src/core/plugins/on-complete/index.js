@@ -18,7 +18,6 @@ export default function() {
               setTimeout(cb, 0)
               engaged = false
             }
-
             return ori(...args)
           }
         }

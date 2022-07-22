@@ -58,7 +58,6 @@ export default class BasicAuth extends React.Component {
     return (
       <div>
         <h4>Basic authorization<JumpToPath path={[ "securityDefinitions", name ]} /></h4>
-        { username && <h6>Authorized</h6> }
         <Row>
           <Markdown source={ schema.get("description") } />
         </Row>

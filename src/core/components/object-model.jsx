@@ -27,9 +27,8 @@ export default class ObjectModel extends Component {
 
   render(){
     let { schema, name, displayName, isRef, getComponent, getConfigs, depth, onToggle, expanded, specPath, ...otherProps } = this.props
-    let { specSelectors,expandDepth, includeReadOnly, includeWriteOnly} = otherProps
-    const { isOAS3 } = specSelectors
-
+    let { specSelectors,expandDepth, includeReadOnly, includeWriteOnly, skipInList } = otherProps
+    
     if(!schema) {
       return null
     }
@@ -61,12 +60,12 @@ export default class ObjectModel extends Component {
         }
     </span>)
 
-    const anyOf = specSelectors.isOAS3() ? schema.get("anyOf") : null
-    const oneOf = specSelectors.isOAS3() ? schema.get("oneOf") : null
-    const not = specSelectors.isOAS3() ? schema.get("not") : null
+    const anyOf = schema.get("anyOf") 
+    const oneOf =  schema.get("oneOf") 
+    const not =  schema.get("not")
 
     const titleEl = title && <span className="model-title">
-      { isRef && schema.get("$$ref") && <span className="model-hint">{ schema.get("$$ref") }</span> }
+      {/* { isRef && schema.get("$$ref") && <span className="model-hint">{ schema.get("$$ref") }</span> } */}
       <span className="model-title__text">{ title }</span>
     </span>
 
@@ -75,7 +74,7 @@ export default class ObjectModel extends Component {
         modelName={name}
         title={titleEl}
         onToggle = {onToggle}
-        expanded={ expanded ? true : depth <= expandDepth }
+        expanded={ true /*expanded ? true : depth <= expandDepth*/ }
         collapsedContent={ collapsedContent }>
 
          <span className="brace-open object">{ braceOpen }</span>
@@ -84,25 +83,24 @@ export default class ObjectModel extends Component {
           }
           <span className="inner-object">
             {
-              <table className="model"><tbody>
+              <div className="model model-margin" >
               {
-                !description ? null : <tr className="description">
-                    <td>description:</td>
-                    <td>
+                !description ? <p/>: <span className="description">
+                    <span>
                       <Markdown source={ description } />
-                    </td>
-                  </tr>
+                    </span>
+                  </span>
               }
               {
                 !deprecated ? null :
-                  <tr className={"property"}>
-                    <td>
+                  <span className={"property"}>
+                    <span>
                       deprecated:
-                    </td>
-                    <td>
+                    </span>
+                    <span>
                       true
-                    </td>
-                  </tr>
+                    </span>
+                  </span>
                
               }
               {
@@ -113,7 +111,7 @@ export default class ObjectModel extends Component {
                     }
                 ).map(
                     ([key, value]) => {
-                      let isDeprecated = isOAS3() && value.get("deprecated")
+                      let isDeprecated = value.get("deprecated")
                       let isRequired = List.isList(requiredProperties) && requiredProperties.contains(key)
 
                       let classNames = ["property-row"]
@@ -126,25 +124,33 @@ export default class ObjectModel extends Component {
                         classNames.push("required")
                       }
 
-                      return (<tr key={key} className={classNames.join(" ")}>
-                        <td>
-                          { key }{ isRequired && <span className="star">*</span> }
-                        </td>
-                        <td>
+                      if((!includeReadOnly && value.get("readOnly")) ||
+                      (!includeWriteOnly && value.get("writeOnly")) ||
+                      (skipInList && value.get("skipInList")) ) {
+                        return null
+                      }
+                      return (<span key={key} className={isDeprecated && "deprecated"}>
+                        <span className={isRequired?"model-field-bold" : "model-field"}>
+                          { key }{ isRequired && <span style={{ color: "red" }}>*</span>  }
+                        </span>
+                        <div className="model-field-type">
                           <Model key={ `object-${name}-${key}_${value}` } { ...otherProps }
                                  required={ isRequired }
                                  getComponent={ getComponent }
-                                 specPath={specPath.push("properties", key)}
+                                 specPath={specPath && specPath.push("properties", key)}
                                  getConfigs={ getConfigs }
                                  schema={ value }
-                                 depth={ depth + 1 } />
-                        </td>
-                      </tr>)
+                                 depth={ depth + 1 } 
+                                 includeReadOnly={includeReadOnly}
+                                  includeWriteOnly={includeWriteOnly}
+                                  skipInList={skipInList} />
+                        </div>
+                      </span>)
                     }).toArray()
               }
               {
                 // empty row befor extensions...
-                !showExtensions ? null : <tr><td>&nbsp;</td></tr>
+                !showExtensions ? null : <span><span>&nbsp;</span></span>
               }
               {
                 !showExtensions ? null :
@@ -156,35 +162,35 @@ export default class ObjectModel extends Component {
 
                       const normalizedValue = !value ? null : value.toJS ? value.toJS() : value
 
-                      return (<tr key={key} className="extension">
-                        <td>
+                      return (<span key={key} className="extension">
+                        <span>
                           { key }
-                        </td>
-                        <td>
+                        </span>
+                        <span>
                           { JSON.stringify(normalizedValue) }
-                        </td>
-                      </tr>)
+                        </span>
+                      </span>)
                     }).toArray()
               }
               {
                 !additionalProperties || !additionalProperties.size ? null
-                  : <tr>
-                    <td>{ "< * >:" }</td>
-                    <td>
+                  : <span>
+                    <span>{ "< * >:" }</span>
+                    <span>
                       <Model { ...otherProps } required={ false }
                              getComponent={ getComponent }
                              specPath={specPath.push("additionalProperties")}
                              getConfigs={ getConfigs }
                              schema={ additionalProperties }
                              depth={ depth + 1 } />
-                    </td>
-                  </tr>
+                    </span>
+                  </span>
               }
               {
                 !anyOf ? null
-                  : <tr>
-                    <td>{ "anyOf ->" }</td>
-                    <td>
+                  : <span>
+                    <span>{ "anyOf ->" }</span>
+                    <span>
                       {anyOf.map((schema, k) => {
                         return <div key={k}><Model { ...otherProps } required={ false }
                                  getComponent={ getComponent }
@@ -193,14 +199,14 @@ export default class ObjectModel extends Component {
                                  schema={ schema }
                                  depth={ depth + 1 } /></div>
                       })}
-                    </td>
-                  </tr>
+                    </span>
+                  </span>
               }
               {
                 !oneOf ? null
-                  : <tr>
-                    <td>{ "oneOf ->" }</td>
-                    <td>
+                  : <span>
+                    <span>{ "oneOf ->" }</span>
+                    <span>
                       {oneOf.map((schema, k) => {
                         return <div key={k}><Model { ...otherProps } required={ false }
                                  getComponent={ getComponent }
@@ -209,14 +215,14 @@ export default class ObjectModel extends Component {
                                  schema={ schema }
                                  depth={ depth + 1 } /></div>
                       })}
-                    </td>
-                  </tr>
+                    </span>
+                  </span>
               }
               {
                 !not ? null
-                  : <tr>
-                    <td>{ "not ->" }</td>
-                    <td>
+                  : <span>
+                    <span>{ "not ->" }</span>
+                    <span>
                       <div>
                         <Model { ...otherProps }
                                required={ false }
@@ -226,10 +232,10 @@ export default class ObjectModel extends Component {
                                schema={ not }
                                depth={ depth + 1 } />
                       </div>
-                    </td>
-                  </tr>
+                    </span>
+                  </span>
               }
-              </tbody></table>
+              </div>
           }
         </span>
         <span className="brace-close">{ braceClose }</span>

@@ -595,12 +595,19 @@ function validateValueBySchema(value, schema, requiredByParam, bypassRequiredChe
 }
 
 // validation of parameters before execute
-export const validateParam = (param, value, { isOAS3 = false, bypassRequiredCheck = false } = {}) => {
+export const validateParam = (param, value, { isOAS3 = false, bypassRequiredCheck = false, isXml = false} = {}) => {
 
   let paramRequired = param.get("required")
 
   let { schema: paramDetails, parameterContentMediaType } = getParameterSchema(param, { isOAS3 })
-
+  if (isXml && (param.get("in") === "body")) {
+    try {
+      validateXML(value)
+      return []
+    } catch (e) {
+      return ["Parameter string value must be valid XML"];
+    }   
+  }
   return validateValueBySchema(value, paramDetails, paramRequired, bypassRequiredCheck, parameterContentMediaType)
 }
 
@@ -630,7 +637,13 @@ const shouldStringifyTypesConfig = [
 const defaultStringifyTypes = ["object"]
 
 const getStringifiedSampleForSchema = (schema, config, contentType, exampleOverride) => {
-  const res = memoizedSampleFromSchema(schema, config, exampleOverride)
+  let res = memoizedSampleFromSchema(schema, config, exampleOverride)
+  if (schema?.json ) {
+    var firstParent = schema.json.name;
+    var json = {}
+    json[firstParent] =  memoizedSampleFromSchema(schema, config)
+    res = json;
+  }
   const resType = typeof res
 
   const typesToStringify = shouldStringifyTypesConfig.reduce(
@@ -661,6 +674,36 @@ const getYamlSampleSchema = (schema, config, contentType, exampleOverride) => {
   }
   return yamlString
     .replace(/\t/g, "  ")
+}
+
+export const validateXML = (value) => {
+  if (document.implementation.createDocument){
+    var doc = new DOMParser().parseFromString(value,"text/xml");
+    var errorsNode = doc.getElementsByTagName("parsererror")
+    if (errorsNode.length>0){
+      var errorDiv = errorsNode[0].getElementsByTagName("div")
+      if (errorDiv.length>0){
+        if(errorDiv[0].innerText){
+          throw new Error(errorDiv[0].innerText.toString());
+        }else if(errorDiv[0].innerHTML){
+          throw new Error(errorDiv[0].innerHTML.toString());
+        }
+      }else if(errorsNode[0].textContent){
+        throw new Error(errorsNode[0].textContent.toString());
+      }
+    }
+  }
+  else if (window.ActiveXObject){
+    var xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
+    xmlDoc.async=false;
+    xmlDoc.loadXML(value);
+    if(xmlDoc.parseError.errorCode!=0){
+      txt="Error Code: " + xmlDoc.parseError.errorCode + "\n";
+      txt=txt+"Error Reason: " + xmlDoc.parseError.reason;
+      txt=txt+"Error Line: " + xmlDoc.parseError.line;
+      throw new Error(txt.toString());
+    }
+  }
 }
 
 export const getSampleSchema = (schema, contentType="", config={}, exampleOverride = undefined) => {

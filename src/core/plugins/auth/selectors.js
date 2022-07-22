@@ -1,5 +1,5 @@
 import { createSelector } from "reselect"
-import { List, Map } from "immutable"
+import { List, Map, fromJS } from "immutable"
 
 const state = state => state
 
@@ -14,12 +14,59 @@ export const definitionsToAuthorize = createSelector(
       let definitions = specSelectors.securityDefinitions() || Map({})
       let list = List()
 
-      //todo refactor
-      definitions.entrySeq().forEach( ([ key, val ]) => {
-        let map = Map()
+      
+      definitions.entrySeq().forEach( ([ defName, definition ]) => {
+        const type = definition.get("type")
 
-        map = map.set(key, val)
-        list = list.push(map)
+        if(type === "oauth2" && definition.get("flows")) {
+          definition.get("flows").entrySeq().forEach(([flowKey, flowVal]) => {
+            let translatedDef = fromJS({
+              flow: flowKey,
+              authorizationUrl: flowVal.get("authorizationUrl"),
+              tokenUrl: flowVal.get("tokenUrl"),
+              scopes: flowVal.get("scopes"),
+              type: definition.get("type"),
+              description: definition.get("description")
+            })
+
+            list = list.push(new Map({
+              [defName]: translatedDef.filter((v) => {
+                return v !== undefined
+              })
+            }))
+          })
+        }
+        else if(type === "http" || type === "apiKey" || type === "oauth2") {
+          list = list.push(new Map({
+            [defName]: definition
+          }))
+        }
+        else if(type === "openIdConnect" && definition.get("openIdConnectData")) {
+          let oidcData = definition.get("openIdConnectData")
+          let grants = oidcData.get("grant_types_supported") || ["authorization_code", "implicit"]
+          grants.forEach((grant) => {
+            // Convert from OIDC list of scopes to the OAS-style map with empty descriptions
+            let translatedScopes = oidcData.get("scopes_supported") &&
+              oidcData.get("scopes_supported").reduce((acc, cur) => acc.set(cur, ""), new Map())
+
+            let translatedDef = fromJS({
+              flow: grant,
+              authorizationUrl: oidcData.get("authorization_endpoint"),
+              tokenUrl: oidcData.get("token_endpoint"),
+              scopes: translatedScopes,
+              type: "oauth2",
+              openIdConnectUrl: definition.get("openIdConnectUrl")
+            })
+
+            list = list.push(new Map({
+              [defName]: translatedDef.filter((v) => {
+                // filter out unset values, sometimes `authorizationUrl`
+                // and `tokenUrl` come out as `undefined` in the data
+                return v !== undefined
+              })
+            }))
+          })
+        }
       })
 
       return list

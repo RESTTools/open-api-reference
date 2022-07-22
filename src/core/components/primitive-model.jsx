@@ -33,7 +33,7 @@ export default class Primitive extends Component {
     let description = schema.get("description")
     let extensions = getExtensions(schema)
     let properties = schema
-      .filter((_, key) => ["enum", "type", "format", "description", "$$ref"].indexOf(key) === -1)
+      .filter((_, key) => ["enum", "type", "format", "description", "$$ref", "xml","json", "modes", "readOnly", "writeOnly", "skipInList"].indexOf(key) === -1)
       .filterNot((_, key) => extensions.has(key))
     const Markdown = getComponent("Markdown", true)
     const EnumModel = getComponent("EnumModel")
@@ -48,10 +48,13 @@ export default class Primitive extends Component {
       <ModelCollapse title={titleEl} expanded={depth >= expandDepth} collapsedContent=" " hideSelfOnExpand={expandDepth !== depth}>
         <span className="prop">
           {name && depth > 1 && <span className="prop-name">{title}</span>}
-          <span className="prop-type">{type}</span>
+        <span className="prop-type">{type}</span>          
+          {
+            enumArray && <EnumModel value={enumArray} getComponent={getComponent} />
+          }
           {format && <span className="prop-format">(${format})</span>}
           {
-            properties.size ? properties.entrySeq().map(([key, v]) => <Property key={`${key}-${v}`} propKey={key} propVal={v} propClass={propClass} />) : null
+            properties.size ? properties.entrySeq().map(([key, v]) => key && v !=undefined && v !=='' && <Property key={`${key}-${v}`} propKey={key} propVal={v} propClass={propClass} />) : null
           }
           {
             showExtensions && extensions.size ? extensions.entrySeq().map(([key, v]) => <Property key={`${key}-${v}`} propKey={key} propVal={v} propClass={propClass} />) : null
@@ -60,16 +63,13 @@ export default class Primitive extends Component {
             !description ? null :
               <Markdown source={description} />
           }
-          {
+          {/* {
             xml && xml.size ? (<span><br /><span className={propClass}>xml:</span>
               {
                 xml.entrySeq().map(([key, v]) => <span key={`${key}-${v}`} className={propClass}><br />&nbsp;&nbsp;&nbsp;{key}: {String(v)}</span>).toArray()
               }
             </span>) : null
-          }
-          {
-            enumArray && <EnumModel value={enumArray} getComponent={getComponent} />
-          }
+          } */}
         </span>
       </ModelCollapse>
     </span>

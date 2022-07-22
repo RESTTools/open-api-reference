@@ -74,7 +74,7 @@ export const parseToJson = (str) => ({specActions, specSelectors, errActions}) =
     })
   }
   if(json && typeof json === "object") {
-    return specActions.updateJsonSpec(json)
+    return specActions.updateJsonSpec(json);
   }
   return {}
 }
@@ -207,7 +207,7 @@ const debResolveSubtrees = debounce(async () => {
         errActions.newThrownErrBatch(preparedErrors)
       }
 
-      if (spec && specSelectors.isOAS3() && path[0] === "components" && path[1] === "securitySchemes") {
+      if (spec && path[0] === "components" && path[1] === "securitySchemes") {
         // Resolve OIDC URLs if present
         await Promise.all(Object.values(spec)
           .filter((scheme) => scheme.type === "openIdConnect")
@@ -297,12 +297,13 @@ export const invalidateResolvedSubtreeCache = () => {
   }
 }
 
-export const validateParams = ( payload, isOAS3 ) =>{
+export const validateParams = ( payload, isOAS3, isXml) =>{
   return {
     type: VALIDATE_PARAMS,
     payload:{
       pathMethod: payload,
-      isOAS3
+      isOAS3,
+      isXml
     }
   }
 }
@@ -373,6 +374,7 @@ export const logRequest = (req) => {
 // (For debugging) and ease of testing
 export const executeRequest = (req) =>
   ({fn, specActions, specSelectors, getConfigs, oas3Selectors}) => {
+    
     let { pathName, method, operation } = req
     let { requestInterceptor, responseInterceptor } = getConfigs()
 
@@ -466,7 +468,6 @@ export const executeRequest = (req) =>
     // track duration of request
     const startTime = Date.now()
 
-
     return fn.execute(req)
     .then( res => {
       res.duration = Date.now() - startTime
@@ -495,7 +496,6 @@ export const execute = ( { path, method, ...extras }={} ) => (system) => {
   let { requestContentType, responseContentType } = specSelectors.contentTypeValues([path, method]).toJS()
   let isXml = /xml/i.test(requestContentType)
   let parameters = specSelectors.parameterValues([path, method], isXml).toJS()
-
   return specActions.executeRequest({
     ...extras,
     fetch,

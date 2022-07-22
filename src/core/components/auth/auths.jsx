@@ -28,6 +28,7 @@ export default class Auths extends React.Component {
 
     let { authActions } = this.props
     authActions.authorizeWithPersistOption(this.state)
+    authActions.showDefinitions(false)
   }
 
   logoutClick =(e) => {
@@ -67,7 +68,6 @@ export default class Auths extends React.Component {
 
     let nonOauthDefinitions = definitions.filter( schema => schema.get("type") !== "oauth2")
     let oauthDefinitions = definitions.filter( schema => schema.get("type") === "oauth2")
-
     return (
       <div className="auth-container">
         {
@@ -87,10 +87,10 @@ export default class Auths extends React.Component {
             }
             <div className="auth-btn-wrapper">
               {
-                nonOauthDefinitions.size === authorizedAuth.size ? <Button className="btn modal-btn auth" onClick={ this.logoutClick }>Logout</Button>
-              : <Button type="submit" className="btn modal-btn auth authorize">Authorize</Button>
+                nonOauthDefinitions.size === authorizedAuth.size ? <Button className="btn modal-btn auth" onClick={ this.logoutClick }>Reset</Button>
+              : <Button type="submit" className="btn modal-btn auth">Set Credentials</Button>
               }
-              <Button className="btn modal-btn auth btn-done" onClick={ this.close }>Close</Button>
+              <Button className="btn modal-btn auth-close" onClick={ this.close }>Close</Button>
             </div>
           </form>
         }
@@ -98,8 +98,8 @@ export default class Auths extends React.Component {
         {
           oauthDefinitions && oauthDefinitions.size ? <div>
           <div className="scope-def">
-            <p>Scopes are used to grant an application different levels of access to data on behalf of the end user. Each API may declare one or more scopes.</p>
-            <p>API requires the following scopes. Select which ones you want to grant to Swagger UI.</p>
+            {/* <p>Scopes are used to grant an application different levels of access to data on behalf of the end user. Each API may declare one or more scopes.</p>
+            <p>API requires the following scopes. Select which ones you want to grant to Swagger UI.</p> */}
           </div>
             {
               definitions.filter( schema => schema.get("type") === "oauth2")

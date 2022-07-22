@@ -21,6 +21,7 @@ export default class Auths extends React.Component {
     } = this.props
     const ApiKeyAuth = getComponent("apiKeyAuth")
     const BasicAuth = getComponent("basicAuth")
+    const HttpAuth = getComponent("HttpAuth")
 
     let authEl
 
@@ -43,6 +44,14 @@ export default class Auths extends React.Component {
                                       getComponent={ getComponent }
                                       onChange={ onAuthChange } />
         break
+      case "http": authEl = <HttpAuth key={ name }
+                              schema={ schema }
+                              name={ name }
+                              errSelectors={ errSelectors }
+                              authorized={ authorized }
+                              getComponent={ getComponent }
+                              onChange={ onAuthChange }/>
+          break
       default: authEl = <div key={ name }>Unknown security definition type { type }</div>
     }
 

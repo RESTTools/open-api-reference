@@ -7,7 +7,7 @@ import { getExtensions, getSampleSchema, fromJSOrdered, stringify } from "core/u
 import { getKnownSyntaxHighlighterLanguage } from "core/utils/jsonParse"
 
 
-const getExampleComponent = ( sampleResponse, HighlightCode, getConfigs ) => {
+const getExampleComponent = ( sampleResponse, HighlightCode, getConfigs, type, schema ) => {
   if (
     sampleResponse !== undefined &&
     sampleResponse !== null
@@ -17,7 +17,15 @@ const getExampleComponent = ( sampleResponse, HighlightCode, getConfigs ) => {
     if (testValueForJson) {
       language = "json"
     }
-    return <div>
+    let xsd;
+    if (schema) {
+      xsd = schema.get("xsd");
+    }
+    return  <div className="body-actions">
+    <ul >
+      {xsd && type && type.indexOf("xml") > -1 &&
+        <li><a title="XSD" target="_blank" href={xsd}>XSD <i className="fa fa-external-link"></i></a></li>}
+    </ul>
       <HighlightCode className="example" getConfigs={ getConfigs } language={ language } value={ stringify(sampleResponse) } />
     </div>
   }
@@ -91,6 +99,7 @@ export default class Response extends React.Component {
       contentType,
       controlsAcceptHeader,
       oas3Actions,
+      produces
     } = this.props
 
     let { inferSchema } = fn
@@ -125,14 +134,15 @@ export default class Response extends React.Component {
       specPathWithPossibleSchema = oas3SchemaForContentType ? List(["content", this.state.responseContentType, "schema"]) : specPath
     } else {
       schema = response.get("schema")
-      specPathWithPossibleSchema = response.has("schema") ? specPath.push("schema") : specPath
+      specPathWithPossibleSchema = response.has("schema") ? specPath && specPath.push("schema") : specPath
     }
 
     let mediaTypeExample
     let shouldOverrideSchemaExample = false
     let sampleSchema
     let sampleGenConfig = {
-      includeReadOnly: true
+      includeReadOnly: true,
+      skipInList: schema?.listMode ? true : false
     }
 
     // Goal: find an example value for `sampleResponse`
@@ -156,7 +166,7 @@ export default class Response extends React.Component {
       }
     } else {
       sampleSchema = schema
-      sampleGenConfig = {...sampleGenConfig, includeWriteOnly: true}
+      sampleGenConfig = {...sampleGenConfig, includeWriteOnly: false}
       const oldOASMediaTypeExample = response.getIn(["examples", activeContentType])
       if(oldOASMediaTypeExample) {
         mediaTypeExample = oldOASMediaTypeExample
@@ -170,15 +180,14 @@ export default class Response extends React.Component {
       sampleGenConfig,
       shouldOverrideSchemaExample ? mediaTypeExample : undefined
     )
-
-    let example = getExampleComponent( sampleResponse, HighlightCode, getConfigs )
+    let example = getExampleComponent( sampleResponse, HighlightCode, getConfigs,  produces, fromJSOrdered(schema) )
 
     return (
-      <tr className={ "response " + ( className || "") } data-code={code}>
-        <td className="response-col_status">
-          { code }
-        </td>
-        <td className="response-col_description">
+      <div className={ "one-result response " + ( className || "") } data-code={code}>
+        <div className="response-col_status">
+            Status Code : {code}
+        </div>
+        <div className="response-col_description">
 
           <div className="response-col_description__inner">
             <Markdown source={ response.get( "description" ) } />
@@ -242,8 +251,11 @@ export default class Response extends React.Component {
               getConfigs={ getConfigs }
               specSelectors={ specSelectors }
               schema={ fromJSOrdered(schema) }
-              example={ example }
-              includeReadOnly={ true }/>
+              example={ example }              
+              type={produces}
+              includeReadOnly={true}
+              includeWriteOnly={false}
+              skipInList={schema?.listMode ? true : false}/>
           ) : null }
 
           { isOAS3 && examplesForMediaType ? (
@@ -262,15 +274,15 @@ export default class Response extends React.Component {
             />
           ) : null}
 
-        </td>
-        {isOAS3 ? <td className="response-col_links">
+        </div>
+        {isOAS3 ? <div className="response-col_links">
           { links ?
             links.toSeq().entrySeq().map(([key, link]) => {
               return <OperationLink key={key} name={key} link={ link } getComponent={getComponent}/>
             })
           : <i>No links</i>}
-        </td> : null}
-      </tr>
+        </div> : null}
+      </div>
     )
   }
 }

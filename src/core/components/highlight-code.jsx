@@ -9,7 +9,8 @@ import { CopyToClipboard } from "react-copy-to-clipboard"
 
 const HighlightCode = ({value, fileName, className, downloadable, getConfigs, canCopy, language}) => {
   const config = isFunction(getConfigs) ? getConfigs() : null
-  const canSyntaxHighlight = get(config, "syntaxHighlight") !== false && get(config, "syntaxHighlight.activated", true)
+  const canSyntaxHighlight = false && get(config, "syntaxHighlight") !== false && get(config, "syntaxHighlight.activated", true)
+  downloadable = false;
   const rootRef = useRef(null)
 
   useEffect(() => {
@@ -53,7 +54,7 @@ const HighlightCode = ({value, fileName, className, downloadable, getConfigs, ca
 
       {canCopy && (
         <div className="copy-to-clipboard">
-          <CopyToClipboard text={value}><button/></CopyToClipboard>
+          <CopyToClipboard text={value}><button><i className="fa fa-copy"></i></button></CopyToClipboard>
         </div>
       )}
 

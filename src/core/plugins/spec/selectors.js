@@ -130,16 +130,26 @@ export const operations = createSelector(
       if(!path || !path.forEach) {
         return {}
       }
-      path.forEach((operation, method) => {
-        if(OPERATION_METHODS.indexOf(method) < 0) {
-          return
+      path.forEach((operation, method) => {   
+        if(OPERATION_METHODS.indexOf(method) === -1) {
+          if(!(pathName && pathName==="-")){
+            return
+          }else{
+            list = list.push(fromJS({
+              path: "",
+              '':'',
+              operation,
+              id: method
+            }))
+          }
+        }else{
+          list = list.push(fromJS({
+            path: pathName,
+            method,
+            operation,
+            id: `${method}-${pathName}`
+          }))
         }
-        list = list.push(fromJS({
-          path: pathName,
-          method,
-          operation,
-          id: `${method}-${pathName}`
-        }))
       })
     })
 
@@ -160,6 +170,17 @@ export const produces = createSelector(
 export const security = createSelector(
     spec,
     spec => spec.get("security", List())
+)
+
+
+export const errorCodeMessage = createSelector(
+  spec,
+  spec => spec.get("errorCodeMessage", Map())
+)
+
+export const footer = createSelector(
+  spec,
+  spec => spec.get("footer", Map())
 )
 
 export const securityDefinitions = createSelector(
@@ -262,11 +283,61 @@ export const taggedOperations = (state) => ({ getConfigs }) => {
       }
     )
     .map((ops, tag) => {
-      let sortFn = (typeof operationsSorter === "function" ? operationsSorter : sorters.operationsSorter[ operationsSorter ])
-      let operations = (!sortFn ? ops : ops.sort(sortFn))
+      var tagInfo = tagDetails(state, tag);
+      let sortFn = (typeof operationsSorter === "function" ? operationsSorter : sorters.operationsSorter[operationsSorter])
+      let operationsMap = new Map();      
+      let operations = new List();
+      if (tagInfo) {
+        let groups = tagInfo.get("groups");
+        if(groups && groups.forEach){
+          let orderFull = new List();
+          groups.forEach( (group) => {            
+            let groupOrder = group.get("order");
+            if(groupOrder && groupOrder.indexOf){
+            orderFull = orderFull.push(...groupOrder);
+            }
+          });
+          tagInfo = tagInfo.set("order",orderFull)
+        } 
 
-      return Map({ tagDetails: tagDetails(state, tag), operations: operations })
-    })
+        let order = tagInfo.get("order");
+        if (!sortFn && order && order.indexOf) {
+          sortFn = (a, b) => {
+            var aIndex = order.indexOf(a.getIn(["operation", "displayName"]))
+            var bIndex = order.indexOf(b.getIn(["operation", "displayName"]))
+            if (aIndex > -1 && bIndex > -1) {
+              return aIndex - bIndex;
+            } else if (aIndex < 0) {
+              return 1;
+            } else if (bIndex < 0) {
+              return -1;
+            }
+          }
+        }
+
+        operations = (!sortFn ? ops : ops.sort(sortFn))
+        if(groups && groups.forEach){
+          groups.forEach( (group) => {            
+            let groupName = group.get("name");
+            let groupOrder = group.get("order");
+            if(groupOrder){            
+            operationsMap = operationsMap.set(groupName, operations.filter(operation =>{   
+              var tagGroup = operation.getIn(["operation", "tagGroup"]);
+              if(tagGroup){
+                return tagGroup == groupName;
+              }else{
+                var found = groupOrder.indexOf(operation.getIn(["operation", "displayName"]))
+                return found >-1 ;
+              } 
+            }));          
+            }
+          });
+        } else{
+          operationsMap = null;
+        }
+      } 
+      return Map({ tagDetails: tagInfo, operations: operations, operationsMap: operationsMap});
+    });
 }
 
 export const responses = createSelector(

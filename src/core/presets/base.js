@@ -80,6 +80,7 @@ import ArrayModel from "core/components/array-model"
 import PrimitiveModel from "core/components/primitive-model"
 import Property from "core/components/property"
 import TryItOutButton from "core/components/try-it-out-button"
+import CodeSection from "core/components/code-section"
 import VersionPragmaFilter from "core/components/version-pragma-filter"
 import VersionStamp from "core/components/version-stamp"
 import DeepLink from "core/components/deep-link"
@@ -165,6 +166,7 @@ export default function() {
       Example,
       ExamplesSelect,
       ExamplesSelectValueRetainer,
+      CodeSection
     }
   }
 

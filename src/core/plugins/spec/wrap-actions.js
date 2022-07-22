@@ -10,6 +10,7 @@ export const updateJsonSpec = (ori, {specActions}) => (...args) => {
 
   specActions.invalidateResolvedSubtreeCache()
 
+  // specActions.requestResolvedSubtree(["tags"])
   // Trigger resolution of any path-level $refs.
   const [json] = args
   const pathItems = get(json, ["paths"]) || {}
@@ -33,6 +34,6 @@ export const executeRequest = (ori, { specActions }) => (req) => {
   return ori(req)
 }
 
-export const validateParams = (ori, { specSelectors }) => (req) => {
-  return ori(req, specSelectors.isOAS3())
+export const validateParams = (ori, { specSelectors }) => (req, isXml=false) => {
+  return ori(req, specSelectors.isOAS3(), isXml)
 }

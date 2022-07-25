@@ -235,15 +235,7 @@ export default {
   },
 
   [CLEAR_REQUEST]: (state, { payload: { path, method } } ) =>{
-    state.deleteIn( [ "requests", path, method ])
-    return state.updateIn( [ "resolved", "paths",  path, method, "parameters" ], fromJS([]), parameters => {
-      return parameters.withMutations( parameters => {
-        for ( let i = 0, len = parameters.count(); i < len; i++ ) {
-            parameters.deleteIn([i, "value"], "")
-            parameters.deleteIn([i, "value_xml"], "")
-        }
-      })
-    })
+    return state.deleteIn( [ "meta", "paths", path, method ])
   },
 
   [SET_SCHEME]: (state, { payload: { scheme, path, method } } ) =>{

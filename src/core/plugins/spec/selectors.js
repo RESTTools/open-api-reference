@@ -175,12 +175,12 @@ export const security = createSelector(
 
 export const errorCodeMessage = createSelector(
   spec,
-  spec => spec.get("errorCodeMessage", Map())
+  spec => spec.get("errorCodeMessage")
 )
 
 export const footer = createSelector(
   spec,
-  spec => spec.get("footer", Map())
+  spec => spec.get("footer")
 )
 
 export const securityDefinitions = createSelector(

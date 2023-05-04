@@ -54,7 +54,7 @@ export default function getParameterSchema(parameter, { isOAS3 } = {}) {
 
   if (!isOAS3) {
     // Swagger 2.0
-    if (parameter.get("in") === "body") {
+    if (parameter.get("in") === "body" || parameter.get("schema")) {
       return {
         schema: parameter.get("schema", Im.Map()),
         parameterContentMediaType: null,

@@ -137,7 +137,7 @@ export default class MainContainer extends React.Component {
 
   }
 
-  showContent(key, selfId, activeId) {
+  showContent(key, selfId, activeId, pageTitle) {
     this.setState({
       searchValue: this.state.searchValue,
       searching: this.state.searching,
@@ -145,6 +145,9 @@ export default class MainContainer extends React.Component {
       toggleMenu: false,
       selectedGroup: ""
     });
+    if(pageTitle){
+      document.title = pageTitle;
+    }
 
     if (key == "info") {
       history.replaceState({}, key, `?${key}`);
@@ -359,7 +362,8 @@ export default class MainContainer extends React.Component {
                                               this,
                                               isShownKey,
                                               "sidebar-" + isShownKey.join("-"),
-                                              "sidebar-" + tag
+                                              "sidebar-" + tag,
+                                              displayName ? displayName : operationId
                                             )}
                                             id={
                                               "sidebar-" + isShownKey.join("-")
@@ -415,7 +419,8 @@ export default class MainContainer extends React.Component {
                   this,
                   "info",
                   "sidebar-info",
-                  "sidebar-info"
+                  "sidebar-info",
+                  "Overview"
                 )}
               >
                 <a className="tab-icon">
@@ -459,11 +464,6 @@ export default class MainContainer extends React.Component {
                       displayName = operationId;
                     }
                     if (showOp) {
-                      if (displayName) {
-                        document.title = displayName;
-                      } else {
-                        document.title = isShownKey[2];
-                      }
                       somethingShown = true;
                     }
                     const showSaperator =
@@ -478,7 +478,8 @@ export default class MainContainer extends React.Component {
                           this,
                           isShownKey,
                           "sidebar-" + isShownKey.join("-"),
-                          "sidebar-" + tag
+                          "sidebar-" + tag,
+                          displayName ? displayName : operationId
                         )}
                       >
                         <a

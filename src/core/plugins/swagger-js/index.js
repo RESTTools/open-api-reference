@@ -53,7 +53,7 @@ function buildRequestNew(options,removeRaw) {
   }
 
   var spec = options.spec,
-      operation = options.operation,
+      operation = options.operation.toJS ? options.operation.toJS() : options.operation,
       securities = options.securities;
 
   let request = buildRequest(options);
@@ -63,6 +63,10 @@ function buildRequestNew(options,removeRaw) {
     operation: operation,
     spec: spec
   });
+  
+  if(request?.headers && request.headers?.authorization == request.headers?.Authorization){
+    delete request.headers.authorization;
+  }
   if(rawParam){
     if(request.url.indexOf("?") >0){
       request.url = request.url + "&" + rawParam

@@ -617,6 +617,9 @@ export const inferSchema = (thing) => {
 }
 
 export const createXMLExample = (schema, config, o) => {
+  if(schema?.exampleXml){    
+    return XML(schema.exampleXml, { declaration: true, indent: "  " })
+  }
   const json = sampleFromSchemaGeneric(schema, config, o, true)
   if (!json) { return }
   if(typeof json === "string") {

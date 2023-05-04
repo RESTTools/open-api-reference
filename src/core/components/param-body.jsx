@@ -104,7 +104,7 @@ export default class ParamBody extends PureComponent {
     let paramValue = isXml ? param.get("value_xml") : param.get("value")
 
     if ( paramValue !== undefined ) {
-      let val = !paramValue && isJson ? "{}" : !paramValue && !isJson ? "<>": paramValue
+      let val = !paramValue ? "": paramValue
       this.setState({ value: val })
       this.onChange(val, {isXml: isXml, isEditBox: isExecute})
     } else {

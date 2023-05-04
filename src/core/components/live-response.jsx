@@ -102,14 +102,14 @@ export default class LiveResponse extends React.Component {
                   </div>
                   : null
               }
-              {status == "404" &&
+              {status == "401" &&
                 <div className="response-col_description__inner">
                   <h4><span className="server-error">
                     <span className="authorization__btn unlocked">
                       <svg width="10" height="10">
                         <use href="#unlocked" xlinkHref="#unlocked" />
                       </svg>
-                      </span> Authentication Error
+                      </span>Authentication Error
                 </span></h4>
                 <div className="markdown"><p>User credentials are missing, invalid or locked.<br/>
                 Click{ 
@@ -121,7 +121,7 @@ export default class LiveResponse extends React.Component {
                             authActions.showDefinitions(applicableDefinitions)
                           }}
                         />
-                  } to set proper credentials. </p>
+                  }to set proper credentials. </p>
                 </div>
                 </div>
               }
